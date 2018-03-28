@@ -1,0 +1,49 @@
+Gabriel Pridham
+N01383793
+COP 3404
+Project 3
+
+Purpose:
+
+	Creating pass one of the assembler. Pass one generates the proper addresses for each line.
+
+General Description:
+		Compile: make
+		Execute: ./p3 filename
+		
+		filename = user entered txt file.
+ 
+		Reads in a text file with an expectation of all CAPITAL letters, NO TABS only spaces,
+                and the following fixed format:
+			
+			Col 1-8    label optional
+			Col 9      blank
+			Col 10     + optional
+			Col 11-17  mneumonic
+			Col 18     blank
+			Col 19     #, @, =  ... optional
+			Col 20-29  (operand) label, register, ',',X optional  ...
+			Col 30-31  blank
+			Col 32-80  comments optional (NO PERIOD REQUIRED)
+		
+
+		
+		Reads each line into any ArrayList<StringInfo> weres the string is parsed
+		and disected to know what the string entails.
+		Index expectation for the line: 
+						Label = 0 - 7
+						Mneumonic = 10 - 16
+						Operand = 19 - 28
+						Comment = 31 - 79
+
+		StringInfo also takes care of the Memory Size in Bytes.
+
+		Addressing class generates the proper address for each line. Also hashes
+		all the lables with there associated address. 
+
+		OperandInfo class: Run after the address and hashing to know more about
+				   the operand and to check if the label exists.
+		
+		
+	
+	

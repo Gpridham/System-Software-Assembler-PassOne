@@ -1,0 +1,33 @@
+ADDRES    START    100                               
+. tests pc forward addressing
+. tests base addressing
+. tests pc backward addressing
+. Examples/c1-29-15
+          LDA     #FIRST              load base register 
+          ADDR     T,S                tell assembler  
+          LDX      DISP               A <- (m..m+2)    
+          LDT     #19                  
+          J        DN                              
+Lb1       RESW     8
+          BASE     SEC                              
+          LDB     #SEC                              
+          WORD     3
+          LDS     #THR 
+          RESW     5 
+DN        ADD      THR
+         +ADD      SEC,X     
+          LDX      THREE
+          ADD      LBL,X
+          LDA      Z
+          STA      ANS
+          RSUB
+FIRST     WORD     10
+X         WORD     5
+DISP      WORD     6
+SEC       WORD     5
+THREE     WORD     24
+THR       WORD     12
+Y         RESW     800
+Z         WORD     15
+ANS       RESW     1
+          END           

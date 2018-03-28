@@ -1,0 +1,43 @@
+ADDRES    START    100                               
+
+. tests invalid Mneumonics that use a constant
+. Examples/c1-29-15 including LTORG
+. Invalid Mneumonics included
+. tests invalid label using indexed
+. tests invalid label
+. tests invalid literal
+
+          LDA     #FIRST              load base register 
+          ADDR     T,S                tell assembler  
+          LDX      DISP               A <- (m..m+2)    
+
+          LDT     #19                  
+          J        NOPE               Invalid Label                              
+Lb1       RESW     8
+          BASE     SEC                              
+          LDB     #SEC                              
+          WORD     3
+          LDS     #THR 
+          LDA     =C'Pridham'
+          LDT     =X'05FA'
+          WHAT    =X'FFFF'            Invalid Mneumonic
+          LDA     =X'FFF'             Invalid literal
+          RESW     5 
+DN        ADD      THR
+         +ADD      SEC,X
+          LTORG     
+          LDX      THREE
+          ADD      LBL,X               Invalid label using indexed
+          LDA      Z
+          STA      ANS
+          RSUB
+FIRST     WORD     10
+X         WORD     5
+DISP      WORD     6
+SEC       WORD     5
+THREE     WORD     24
+THR       WORD     12
+Y         RESW     800
+Z         WORD     15
+ANS       RESW     1
+          END           
