@@ -28,8 +28,12 @@ DN        ADD      THR
           LTORG     
           LDX      THREE
           ADD      LBL,X               Invalid label using indexed
+          LDA     =C'NOPE'
           LDA      Z
           STA      ANS
+          LTORG
+          LDA     =X'FA'
+          LDA     =C'no'
           RSUB
 FIRST     WORD     10
 X         WORD     5

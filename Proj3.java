@@ -13,16 +13,8 @@ import java.lang.*;
 	Pass One of Assembler
 
 	TODO
-	- Implement LTORG - Done
-	- Fix the results of errors when dealing with the hashing
-	- Program is case sensitive... assumes the file content will have all capital letters
-	- Create Error messages for invalid mneumonics and duplicate or undefined labels
 	- Create more test files
-	- BYTE
 	- Prob ignore label if mneumonic isnt valid
-	- Change the hash addressing to hash the addresses first and then have seperate method to display DONE
-	- ERROR GENERATE if the constant is hex and is not even
-	- Fix error messages to print properly
 	- Doesnt check to make sure that the mnuemonics that need operands have the operands
 */
 
@@ -52,6 +44,8 @@ class PassOne
 		m_content = readFile(file);
 		
 		m_addressing = new Addressing(m_content); // gets the addresses and hashes addresses
+		
+		m_content = m_addressing.updateContent();
 		
 		checkOperands(); // checks the labels used in operands are defined
 		
@@ -83,6 +77,7 @@ class PassOne
 			System.out.println(m_content.get(index).toString());
 			
 			m_content.get(index).Errors(); // prints the errors that this line might contain
+			
 		}
 	}
 	
@@ -252,6 +247,14 @@ class StringInfo
 		//OperandInfo ope = new OperandInfo(operand, regToReg);
 		
 		//System.out.println("Line: " + content);
+	}
+	
+	// Constructor for adding literal
+	StringInfo( String literal, int byteSize )
+	{
+		this.byteSize = byteSize;
+		this.content = new MyString( literal );
+		
 	}
 	
 	private void parseString()
@@ -496,6 +499,7 @@ class StringInfo
 		return size;
 	}
 	
+	
 } // end StringInfo
 
 /********* OperandInfo ***********
@@ -587,31 +591,6 @@ class OperandInfo
 				return true;
 		}
 		
-		/*
-		switch( register)
-		{
-			case "A":	//System.out.println("Register A");
-							break;
-			case "X": 	//System.out.println("Register X");
-							break;
-			case "L":	//System.out.println("Register L");
-							break;
-			case "PC": 	//System.out.println("Register PC");
-							break;
-			case "SW":	//System.out.println("Register SW");
-							break;
-			case "B":	//System.out.println("Register B");
-							break;
-			case "S":	//System.out.println("Register S");
-							break;
-			case "T":	//System.out.println("Register T");
-							break;
-			case "F":	//System.out.println("Register F");
-							break;
-			default:		//System.out.println("Error, invalid Register");
-							break;
-		}
-		*/
 		
 		return false;
 	}
@@ -631,32 +610,21 @@ class Addressing
 	
 	private HashTable hashTable;
 	private ArrayList<StringInfo> content; // the whole file
+	private ArrayList<StringInfo> newContent; // updated content
+	private ArrayList<StringInfo> literals;
 	private ArrayList<DataLink> labels = new ArrayList<DataLink>(); // array of label content
 	
 	
 	Addressing(ArrayList<StringInfo> content)
 	{
 		this.content = content;
-		
+		literals = new ArrayList<StringInfo>();
+		newContent = new ArrayList<StringInfo>();
 		
 		generateAddresses();
-		//hashAddresses();
-		//displayLabels();
+		
 	}
-		/*
-		** TEMPORARY METHOD - displays the contents that will be hashed PROB DELETING
-			DOnt even use the labels Arraylist anymore
-		*/
-		/*
-	public void displayLabels()
-	{
-		for( int index = 0; index < labels.size(); index++ )
-		{
-			int addr = labels.get( index ).getValue();
-			System.out.println( labels.get( index ).getKey() + " " + Integer.toHexString( addr ).toUpperCase());
-		}
-	}
-	*/
+		
 	
 	/*
 		PASS ONE
@@ -670,7 +638,6 @@ class Addressing
 		{
 			currentLine = content.get( index );
 			
-			//System.out.println(currentLine);
 			// NEED TO CHANGE
 			if( currentLine.getMneumonic() != null && currentLine.getMneumonic().contains("START") )
 			{
@@ -681,9 +648,15 @@ class Addressing
 			*/
 			if( currentLine.isLtorg() && !currentLine.isInvalidMneumonic())
 			{
-				ltorgSize += currentLine.getConstantSize();
+				//ltorgSize += currentLine.getConstantSize();
+				
+				String lit = String.format("=%-9.9s  BYTE    %s", currentLine.getOperand(), currentLine.getOperand());
+				
+				literals.add( new StringInfo( lit, currentLine.getConstantSize() ) );
+				
 			}
 			
+			newContent.add( currentLine );
 			currentLine.setAddress(pc); // this needs to be before the updated PC
 			
 				// HASH label and location
@@ -707,16 +680,25 @@ class Addressing
 				
 			}
 			
-			if(!currentLine.isCommentLine() && currentLine.getMneumonic().equals( "LTORG") )
-			{
-				pc += ltorgSize;
-				ltorgSize = 0; 
+			if(!currentLine.isCommentLine() && ( currentLine.getMneumonic().equals( "LTORG") || currentLine.getMneumonic().equals( "END") ) )
+			{	
+				// add all the literals to the file now that LTORG is reached
+				for( int i = 0; i < literals.size(); i++ )
+				{
+					literals.get( i ).setAddress(pc);
+					newContent.add( literals.get( i ) );
+					pc += literals.get( i ).getBytes();
+				}
+				literals.clear();
+				//pc += ltorgSize;
+				//ltorgSize = 0; 
 			}
 			
 			if( !currentLine.isCommentLine()  )
 			{
 				pc += currentLine.getBytes();
 				//System.out.println(Integer.toHexString( pc ).toUpperCase());
+			
 			}
 	
 		}
@@ -724,78 +706,12 @@ class Addressing
 		
 	}
 	
-	/* // not using
-	public void hashAddresses()
-	{
-	    hashTable = new HashTable( 3 * labels.size());
-		DataLink link;
-		StringInfo currentLine;
-		
-		for(int index = 0; index < content.size(); index++)
-		{
-			currentLine = content.get( index );
-			if( currentLine.hasLabel())
-			{
-				link = currentLine.getSymbol();
-				int location = hashTable.hashFunc(link.getKey());
-				
-				
-				if( link.getValue() != -1  ) // if attempting to insert new data
-				{
-					if ( hashTable.find( link.getKey() )!= null ) // if 
-					{
-						currentLine.setError(3); // sets error for duplicate labels
-						//System.out.println(String.format("ERROR  %s already exists at location %d with value %X",  link.getKey(), location, hashTable.find( link.getKey() ).getValue()));
-						
-					}
-					else
-					{
-						hashTable.insert(labels.get(index));
-						if( hashTable.collision( location ) )
-						{
-							// do something if collision needs to be detected
-						}
-							
-						//System.out.println( String.format("%-14d %-8s %-7s main  main", location, link.getKey(),  Integer.toHexString(link.getValue()).toUpperCase()));
-						
-					}
-				}
-					
-				else // if trying to search for data
-				{
-					if( hashTable.find( link.getKey() ) != null ) // found data inof
-						System.out.println( link.getKey() + " stored at location " + location + " with value: " + hashTable.find( link.getKey()).getValue());
-					else  // if no data exsist
-						System.out.println("ERROR " + link.getKey() + " not found" );
-				}
-					
+	public ArrayList<StringInfo> updateContent(){ return newContent; }
 	
-			}
-		}
 	
-		
-	} // end of hashAddresses
-
-	*/
 	
 	public HashTable getHashTable(){ return hashTable; }
 	
 	
 	
-	/*
-	 ****** nextAddress ******
-		int bytes: Bytes that are taken up
-		
-		Updates program counter by incrementing by the bytes currently entered
-	 
-	*/
-	public int nextAddress(int bytes)
-	{
-		pc += bytes;
-		
-		return pc;
-	}
-	
-	
-	
-}
+} // end Addressing class

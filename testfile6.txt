@@ -9,6 +9,7 @@ NOW      +LDB     #BEGIN              load base register
 XXX       BASE     BEGIN              tell assembler  
 YYY       LDA      BE,X               A <- (m..m+2)    
           ADDR     T,S
+          ADDR     X
           ADDR     PC,SW
 EN        RESW     4                  
 BE        WORD     2                              
