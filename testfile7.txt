@@ -1,8 +1,10 @@
-ADDRES    START    100                               
+ 
 . tests pc forward addressing
 . tests base addressing
 . tests pc backward addressing
 . test for missing operand
+. test no start
+. test no end
 
 NOW      +LDB     #BEGIN              load base register 
 XXX       BASE     BEGIN              tell assembler  
@@ -17,4 +19,4 @@ JUNK      RESW     2200
 THERE     RESW     1                              
 ZZZ       LDA      JUNK                               
 MMM       STA      THERE                              
-          END      NOW                     
+                   

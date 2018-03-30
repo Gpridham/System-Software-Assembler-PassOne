@@ -11,11 +11,6 @@ import java.lang.*;
 	
 	Project3 
 	Pass One of Assembler
-
-	TODO
-	- Create more test files
-	- Prob ignore label if mneumonic isnt valid
-	- Doesnt check to make sure that the mnuemonics that need operands have the operands
 */
 
 public class Proj3
@@ -144,11 +139,6 @@ class MyString
 		int subIndex = 0;
 		int index = start;
 		
-		//System.out.println("String " + new String( string) );
-		//System.out.println("Start: " + start + " End: " + end + " string length " + string.length);
-		//System.out.println("Content: " + new String( string ) + "Length: " + string.length);
-		//System.out.println("Sub: " + string[index]);
-		
 		// copies contents if start has a character or if its the whole comment section
 		while( index < string.length  && index <= end   )
 		{
@@ -235,6 +225,14 @@ class StringInfo
 	private boolean ltorg = false; 
 	private boolean invalidMneumonic = false;
 	private boolean regToReg = false; // determines if Using a mneumonic that is register to register
+	private boolean errorMessage = false; // true if the start or end is missing
+	
+	StringInfo()
+	{
+		// used to set errors for missing end or start
+		errorMessage = true;
+		Errors();
+	}
 	
 	StringInfo(String content)
 	{
@@ -250,10 +248,12 @@ class StringInfo
 	}
 	
 	// Constructor for adding literal
-	StringInfo( String literal, int byteSize )
+	StringInfo( String content, String literal, int byteSize )
 	{
 		this.byteSize = byteSize;
-		this.content = new MyString( literal );
+		this.label = literal;
+		this.content = new MyString( content );
+
 		
 	}
 	
@@ -412,6 +412,8 @@ class StringInfo
 		
 		if(lineComment)
 			string= comment;
+		else if(errorMessage)
+			string = new String("Error: ");
 		else
 			string = String.format("%-4s %s", addr, content.toStringType().toString());
 			//string =   String.format("%-4s %-8s %-8s %-9s %s ", addr, label, mneumonic, operand, comment );
@@ -443,6 +445,9 @@ class StringInfo
 					
 					case 5: System.out.println("****Error " + operand + " contains invalid register");// Invalid Register
 								break;
+					case 6: System.out.println("**** Start not found.");
+								break;
+					case 7: System.out.println("**** End not found.");
 				}
 			}
 		}
@@ -469,7 +474,6 @@ class StringInfo
 	public boolean isRegToReg(){ return regToReg; }
 	
 	
-	// ERROR GENERATE if the constant is hex and is not even
 	public int getConstantSize()
 	{
 		if(!ltorg) // just in case method is called when it shouldn't be called
@@ -602,6 +606,7 @@ class OperandInfo
 	
 }
 
+
 class Addressing
 {
 	private int pc = 0; // program counter
@@ -632,17 +637,24 @@ class Addressing
 	*/ 
 	private void generateAddresses()
 	{
+		boolean startFound = false;
+		boolean endFound = false;
+		
 		hashTable = new HashTable( 3 * content.size());
 		StringInfo currentLine;
 		for(int index = 0; index < content.size(); index++ )
 		{
 			currentLine = content.get( index );
 			
-			// NEED TO CHANGE
+			// Grabs the starting address
 			if( currentLine.getMneumonic() != null && currentLine.getMneumonic().contains("START") )
 			{
 				pc = Integer.parseInt( currentLine.getOperand(), 16 ); // grabs hex string and converts value to decimal 
+				startFound = true;
 			}
+			
+			if(currentLine.getMneumonic() != null && currentLine.getMneumonic().contains("END") )
+				endFound = true;
 			/*
 				LTORG IMPLEMENTATIONS
 			*/
@@ -650,9 +662,10 @@ class Addressing
 			{
 				//ltorgSize += currentLine.getConstantSize();
 				
-				String lit = String.format("=%-9.9s  BYTE    %s", currentLine.getOperand(), currentLine.getOperand());
+				String lit = String.format("=%-8.8s BYTE    %s", currentLine.getOperand(), currentLine.getOperand());
+			
 				
-				literals.add( new StringInfo( lit, currentLine.getConstantSize() ) );
+				literals.add( new StringInfo( lit, currentLine.getOperand(), currentLine.getConstantSize() ) );
 				
 			}
 			
@@ -687,7 +700,11 @@ class Addressing
 				{
 					literals.get( i ).setAddress(pc);
 					newContent.add( literals.get( i ) );
+					
+					DataLink link = new DataLink(literals.get( i ).getLabel(), literals.get( i ).getAddress() );
+					hashTable.insert( link );
 					pc += literals.get( i ).getBytes();
+					
 				}
 				literals.clear();
 				//pc += ltorgSize;
@@ -703,6 +720,18 @@ class Addressing
 	
 		}
 		
+		if(!startFound)
+		{
+			StringInfo errStart = new StringInfo();
+			errStart.setError(6);
+			newContent.add(errStart);
+		}
+		if(!endFound)
+		{
+			StringInfo errEnd = new StringInfo();
+			errEnd.setError(7);
+			newContent.add(errEnd);
+		}
 		
 	}
 	

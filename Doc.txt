@@ -28,7 +28,7 @@ General Description:
 		
 
 		
-		Reads each line into any ArrayList<StringInfo> weres the string is parsed
+		Reads each line into any ArrayList<StringInfo> were the string is parsed
 		and disected to know what the string entails.
 		Index expectation for the line: 
 						Label = 0 - 7
@@ -39,7 +39,7 @@ General Description:
 		StringInfo also takes care of the Memory Size in Bytes.
 
 		Addressing class generates the proper address for each line. Also hashes
-		all the lables with there associated address. 
+		all the labels with there associated address. 
 
 		OperandInfo class: Run after the address and hashing to know more about
 				   the operand and to check if the label exists.
